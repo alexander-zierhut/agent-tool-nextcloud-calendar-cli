@@ -1,0 +1,19 @@
+# Local test backend: Nextcloud (same major as production) + Mailpit to observe
+# the iMIP mails the server sends on scheduling. Never point tests at a real server.
+services:
+  nextcloud:
+    image: nextcloud:35.0.2-apache
+    ports: ["127.0.0.1:${NC_PORT:-8089}:80"]
+    environment:
+      SQLITE_DATABASE: nextcloud
+      NEXTCLOUD_ADMIN_USER: admin
+      NEXTCLOUD_ADMIN_PASSWORD: admin-test-pw-123
+      NEXTCLOUD_TRUSTED_DOMAINS: "localhost 127.0.0.1 nextcloud"
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: ""
+      MAIL_FROM_ADDRESS: nextcloud
+      MAIL_DOMAIN: example.test
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:${MAILPIT_PORT:-8025}:8025"]

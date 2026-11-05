@@ -1,0 +1,93 @@
+
+## D1 attendee create with PARTSTAT=NEEDS-ACTION
+  -> PUT /remote.php/dav/calendars/alex/personal/D.ics = 201 {'etag': '"89dac85d139e8aed2670bc660df8030f"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## D2 -> ACCEPTED, SEQUENCE+LAST-MODIFIED unchanged
+  -> PUT /remote.php/dav/calendars/alex/personal/D.ics = 204 {}
+  MAILS: none
+     | DTSTART;TZID=Europe/Berlin:20261117T100000
+     | SEQUENCE:0
+     | ORGANIZER;CN=org;SCHEDULE-STATUS=1.0:mailto:organizer@external.test
+     | ATTENDEE;CN=alex;PARTSTAT=ACCEPTED;RSVP=TRUE:mailto:alex@example.test
+
+## D3 -> DECLINED with LAST-MODIFIED set
+  -> PUT /remote.php/dav/calendars/alex/personal/D.ics = 204 {}
+  MAILS: none
+
+## D4 -> ACCEPTED with LAST-MODIFIED bumped
+  -> PUT /remote.php/dav/calendars/alex/personal/D.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: D", "method": "METHOD:REPLY"}]
+
+## D5 attendee moves +1h with LAST-MODIFIED bumped (partstat unchanged)
+  -> PUT /remote.php/dav/calendars/alex/personal/D.ics = 204 {'etag': '"9a233e34e601d8181acff26f1b5f8906"'}
+  MAILS: none
+
+## D6 attendee DELETE of ACCEPTED event, no header
+  -> DELETE /remote.php/dav/calendars/alex/personal/D.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: D", "method": "METHOD:REPLY"}]
+
+## D7 attendee create ACCEPTED w/ LAST-MODIFIED (Thunderbird-like)
+  -> PUT /remote.php/dav/calendars/alex/personal/D-b.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: D-b", "method": "METHOD:REPLY"}]
+
+## D8 attendee DELETE with LAST-MODIFIED present, no header
+  -> DELETE /remote.php/dav/calendars/alex/personal/D-b.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: D-b", "method": "METHOD:REPLY"}]
+
+## E1 organizer create, attendees SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/E.ics = 201 {'etag': '"39216a5866568a4e41c9e6c1edea0f92"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+     bob has: nothing
+
+## E2 strip SCHEDULE-AGENT=CLIENT, nothing else changed
+  -> PUT /remote.php/dav/calendars/alex/personal/E.ics = 204 {}
+  MAILS: none
+     | DTSTART;TZID=Europe/Berlin:20261119T100000
+     | SEQUENCE:0
+     | ORGANIZER;CN=org:mailto:alex@example.test
+     | ATTENDEE;CN=alex;PARTSTAT=ACCEPTED;RSVP=TRUE:mailto:alex@example.test
+     | ATTENDEE;CN=bob;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;SCHEDULE-STATUS=1.0:mailto:bob@example.test
+     | ATTENDEE;CN=carol;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;SCHEDULE-STATUS=1.0:mailto:carol@external.test
+     bob has: sabredav-f4478ff2-e0bf-477e-8e46-c3f2eab9d609.ics ['DTSTART;TZID=Europe/Berlin:20261119T100000', 'SUMMARY:E', 'SEQUENCE:0']
+
+## E3 organizer moves, SEQUENCE unchanged
+  -> PUT /remote.php/dav/calendars/alex/personal/E.ics = 204 {}
+  MAILS: none
+     bob has: sabredav-f4478ff2-e0bf-477e-8e46-c3f2eab9d609.ics ['DTSTART;TZID=Europe/Berlin:20261119T120000', 'SUMMARY:E', 'SEQUENCE:0']
+
+## E4 organizer moves, SEQUENCE 0->1
+  -> PUT /remote.php/dav/calendars/alex/personal/E.ics = 204 {}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Invitation updated: E", "method": "METHOD:REQUEST"}, {"to": ["bob@example.test"], "subject": "Invitation updated: E", "method": "METHOD:REQUEST"}]
+     | DTSTART;TZID=Europe/Berlin:20261119T140000
+     | SEQUENCE:1
+     | ORGANIZER;CN=org:mailto:alex@example.test
+     | ATTENDEE;CN=alex;PARTSTAT=ACCEPTED;RSVP=TRUE:mailto:alex@example.test
+     | ATTENDEE;CN=bob;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;SCHEDULE-STATUS=1.1:mailto:bob@example.test
+     | ATTENDEE;CN=carol;PARTSTAT=NEEDS-ACTION;RSVP=TRUE;SCHEDULE-STATUS=1.1:mailto:carol@external.test
+     bob has: sabredav-f4478ff2-e0bf-477e-8e46-c3f2eab9d609.ics ['DTSTART;TZID=Europe/Berlin:20261119T140000', 'SUMMARY:E', 'SEQUENCE:1']
+
+## E5 organizer sets STATUS:CANCELLED + SEQUENCE 2
+  -> PUT /remote.php/dav/calendars/alex/personal/E.ics = 204 {}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Cancelled: E", "method": "METHOD:CANCEL"}, {"to": ["bob@example.test"], "subject": "Cancelled: E", "method": "METHOD:CANCEL"}, {"to": ["alex@example.test"], "subject": "Cancelled: E", "method": "METHOD:CANCEL"}]
+     bob has: sabredav-f4478ff2-e0bf-477e-8e46-c3f2eab9d609.ics ['DTSTART;TZID=Europe/Berlin:20261119T140000', 'SUMMARY:E', 'SEQUENCE:2', 'STATUS:CANCELLED']
+
+## E6 organizer DELETE with Schedule-Reply: F
+  -> DELETE /remote.php/dav/calendars/alex/personal/E.ics = 204 {}
+  MAILS: none
+     bob has: sabredav-f4478ff2-e0bf-477e-8e46-c3f2eab9d609.ics ['DTSTART;TZID=Europe/Berlin:20261119T140000', 'SUMMARY:E', 'SEQUENCE:2', 'STATUS:CANCELLED']
+
+## F1 create as Thunderbird stored it
+  -> PUT /remote.php/dav/calendars/alex/personal/incident.ics = 201 {'etag': '"7dcc31c3187814fae96b7e6b9f63d577"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+     server expand 02.-09.11.: ['RECURRENCE-ID:20261106T100000Z', 'DTSTART:20261106T103000Z']
+
+## F2 fix 1: drop EXDATE
+  -> PUT /remote.php/dav/calendars/alex/personal/incident.ics = 204 {'etag': '"cc02461af7d3a5fccc7fc5cace7cc4df"'}
+  MAILS: none
+     server expand 02.-09.11.: ['RECURRENCE-ID:20261106T100000Z', 'DTSTART:20261106T103000Z', 'DTSTART:20261106T110000Z', 'RECURRENCE-ID:20261106T110000Z']
+
+## F3 fix 2: floating override
+  -> PUT /remote.php/dav/calendars/alex/personal/incident.ics = 204 {'etag': '"9ace024e4c64bd456c86263a93851632"'}
+  MAILS: none
+     server expand 02.-09.11.: ['RECURRENCE-ID:20261106T110000Z', 'DTSTART:20261106T113000Z']

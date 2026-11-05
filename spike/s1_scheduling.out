@@ -1,0 +1,107 @@
+
+## A1 create as attendee, PARTSTAT=ACCEPTED
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: A-ext-org", "method": "METHOD:REPLY"}]
+  (no ETag on PUT response; HEAD gives "953f25ee190c803d0a49f24ed04ecf2c")
+
+## A2 move +30min (attendee changes DTSTART)
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 204 {'etag': '"b7eb5561d74fb741569fdc79d9189ba8"'}
+  MAILS: none
+
+## A3 extend to 2.5h (attendee changes DTEND)
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 204 {'etag': '"aab27a577dc7787987dbd06641c13267"'}
+  MAILS: none
+
+## A4 stale If-Match
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 412 {'etag': '"aab27a577dc7787987dbd06641c13267"', 'content-type': 'application/xml; charset=utf-8'}
+     <?xml version="1.0" encoding="utf-8"?>
+     <d:error xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns">
+       <s:exception>Sabre\DAV\Exception\PreconditionFailed</s:exception>
+       <s:message>An If-Match header was specified, but none of the specified ETags matched.</s:message>
+       <s:header>If-Match</s:header>
+     </d:error>
+
+  MAILS: none
+
+## A5 decline (PARTSTAT=DECLINED)
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 204 {}
+  MAILS: none
+  (no ETag on PUT response; HEAD gives "2443a8e8c3f4ed69a40d19f76a71de71")
+
+## A6 delete as attendee (plain DELETE)
+  -> DELETE /remote.php/dav/calendars/alex/personal/A-ext-org.ics = 204 {}
+  MAILS: none
+
+## A7 create as attendee (TENTATIVE)
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org-b.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: A-ext-org-b", "method": "METHOD:REPLY"}]
+  (no ETag on PUT response; HEAD gives "e2a30672f58055a8754a894481097b75")
+
+## A8 delete as attendee with Schedule-Reply: F
+  -> DELETE /remote.php/dav/calendars/alex/personal/A-ext-org-b.ics = 204 {}
+  MAILS: none
+
+## A9 create as attendee, ORGANIZER;SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org-c.ics = 201 {'etag': '"36045923e4b94071c494c47ecf6a817f"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## A10 decline with ORGANIZER;SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/A-ext-org-c.ics = 204 {'etag': '"4fdcf0c7de6c7eb555d2eefa4799fc2a"'}
+  MAILS: none
+
+## A11 delete with ORGANIZER;SCHEDULE-AGENT=CLIENT
+  -> DELETE /remote.php/dav/calendars/alex/personal/A-ext-org-c.ics = 204 {}
+  MAILS: none
+
+## B1 create as organizer w/ bob (internal) + carol (external)
+  -> PUT /remote.php/dav/calendars/alex/personal/B-own.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Invitation: B-own", "method": "METHOD:REQUEST"}, {"to": ["bob@example.test"], "subject": "Invitation: B-own", "method": "METHOD:REQUEST"}]
+  (no ETag on PUT response; HEAD gives "cddf6d59021b8ef8caddfe324f832f90")
+  bob's personal calendar hrefs: ['/remote.php/dav/calendars/bob/personal/', '/remote.php/dav/calendars/bob/personal/sabredav-fc73f47a-e978-4170-a700-f7818380637e.ics']
+
+## B2 organizer moves (DTSTART change, SEQUENCE unchanged)
+  -> PUT /remote.php/dav/calendars/alex/personal/B-own.ics = 204 {}
+  MAILS: none
+  (no ETag on PUT response; HEAD gives "2e33a49469382200c50405394b3e5cd1")
+
+## B3 organizer changes only SUMMARY-less noop (same content)
+  -> PUT /remote.php/dav/calendars/alex/personal/B-own.ics = 204 {}
+  MAILS: none
+  (no ETag on PUT response; HEAD gives "349c0eea3c1e19c861ffd967f8ff08b0")
+
+## B4 delete as organizer
+  -> DELETE /remote.php/dav/calendars/alex/personal/B-own.ics = 204 {}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Cancelled: B-own", "method": "METHOD:CANCEL"}, {"to": ["bob@example.test"], "subject": "Cancelled: B-own", "method": "METHOD:CANCEL"}]
+
+## B5 create as organizer, attendees SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/B-own-quiet.ics = 201 {'etag': '"4f077521dd2925b3ef89936b4e1c6278"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## B6 move, attendees SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/B-own-quiet.ics = 204 {'etag': '"655b7aa633d1b3a783456cc41c77228b"'}
+  MAILS: none
+
+## B7 delete, attendees SCHEDULE-AGENT=CLIENT
+  -> DELETE /remote.php/dav/calendars/alex/personal/B-own-quiet.ics = 204 {}
+  MAILS: none
+
+## C1 create, no organizer (no VTIMEZONE in body)
+  -> PUT /remote.php/dav/calendars/alex/personal/C-plain.ics = 201 {'etag': '"19d6fb2a86cf201dba7a0037aa3a2eb0"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+  stored body:
+     BEGIN:VCALENDAR
+     VERSION:2.0
+     PRODID:-//spike//EN
+     BEGIN:VEVENT
+     UID:C-plain
+     DTSTAMP:20261105T090000Z
+     DTSTART;TZID=Europe/Berlin:20261115T100000
+     DTEND;TZID=Europe/Berlin:20261115T110000
+     SUMMARY:plain
+     END:VEVENT
+     END:VCALENDAR
+
+
+## C2 delete
+  -> DELETE /remote.php/dav/calendars/alex/personal/C-plain.ics = 204 {}
+  MAILS: none

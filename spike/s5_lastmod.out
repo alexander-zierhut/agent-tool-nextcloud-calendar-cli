@@ -1,0 +1,93 @@
+
+## R1a import invite quietly (ORGANIZER CLIENT, ACCEPTED)
+  -> PUT /remote.php/dav/calendars/alex/personal/R1.ics = 201 {'etag': '"216245c96706b3921beb17a8d9450546"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## R1b phase 2: strip CLIENT, nothing else
+  -> PUT /remote.php/dav/calendars/alex/personal/R1.ics = 204 {'etag': '"35b1ec26d335264d216892593ee5c9f9"'}
+  MAILS: none
+
+## R1c decline, LAST-MODIFIED bump (server scheduling now on)
+  -> PUT /remote.php/dav/calendars/alex/personal/R1.ics = 204 {}
+  MAILS: none
+
+## R2a Thunderbird-like object (ORGANIZER CLIENT, ACCEPTED, LAST-MODIFIED)
+  -> PUT /remote.php/dav/calendars/alex/personal/R2.ics = 201 {'etag': '"9532706876c965f628819357e93f72f0"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## R2b decline + strip CLIENT + LAST-MODIFIED bump in one PUT
+  -> PUT /remote.php/dav/calendars/alex/personal/R2.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R2", "method": "METHOD:REPLY"}]
+
+## R2c re-accept + LAST-MODIFIED bump
+  -> PUT /remote.php/dav/calendars/alex/personal/R2.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R2", "method": "METHOD:REPLY"}]
+
+## R2d tentative + SEQUENCE unchanged, LAST-MODIFIED bump
+  -> PUT /remote.php/dav/calendars/alex/personal/R2.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R2", "method": "METHOD:REPLY"}]
+
+## R3a NEEDS-ACTION create
+  -> PUT /remote.php/dav/calendars/alex/personal/R3.ics = 201 {'etag': '"7abe70eaf83f060ca2fe2be44544e35a"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## R3b -> DECLINED with LAST-MODIFIED newly added
+  -> PUT /remote.php/dav/calendars/alex/personal/R3.ics = 204 {}
+  MAILS: none
+
+## R3c -> DECLINED->ACCEPTED, LAST-MODIFIED bump
+  -> PUT /remote.php/dav/calendars/alex/personal/R3.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R3", "method": "METHOD:REPLY"}]
+
+## R3d -> ACCEPTED->DECLINED, LAST-MODIFIED bump
+  -> PUT /remote.php/dav/calendars/alex/personal/R3.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R3", "method": "METHOD:REPLY"}]
+
+## R4a past event, ACCEPTED, create (past events never mail?)
+  -> PUT /remote.php/dav/calendars/alex/personal/R4.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## T trashbin via REPORT
+  MAILS delete R1: none
+  -> REPORT /remote.php/dav/calendars/alex/trashbin/objects/ = 207 {'content-type': 'application/xml; charset=utf-8'}
+     <?xml version="1.0"?>
+     <d:multistatus xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns"><d:response><d:href>/remote.php/dav/calendars/alex/trashbin/objects/19.ics</d:href><d:propstat><d:prop><d:getetag>&quot;9ace024e4c64bd456c86263a93851632&quot;</d:getetag><x1:deleted-at xmlns:x1="http://nextcloud.com/ns">2026-11-05T09:22:13+00:00</x1:deleted-at><x1:calendar-uri xmlns:x1="http://nextcloud.com/ns">personal</x1:calendar-uri><cal:calendar-data>[elided: replayed real-world object, scrubbed]
+  trash objects: ['/remote.php/dav/calendars/alex/trashbin/objects/19.ics', '/remote.php/dav/calendars/alex/trashbin/objects/8.ics', '/remote.php/dav/calendars/alex/trashbin/objects/9.ics', '/remote.php/dav/calendars/alex/trashbin/objects/10.ics', '/remote.php/dav/calendars/alex/trashbin/objects/12.ics', '/remote.php/dav/calendars/alex/trashbin/objects/13.ics', '/remote.php/dav/calendars/alex/trashbin/objects/14.ics', '/remote.php/dav/calendars/alex/trashbin/objects/15.ics', '/remote.php/dav/calendars/alex/trashbin/objects/16.ics', '/remote.php/dav/calendars/alex/trashbin/objects/17.ics', '/remote.php/dav/calendars/alex/trashbin/objects/20.ics', '/remote.php/dav/calendars/alex/trashbin/objects/22.ics', '/remote.php/dav/calendars/alex/trashbin/objects/3.ics', '/remote.php/dav/calendars/alex/trashbin/objects/28.ics', '/remote.php/dav/calendars/alex/trashbin/objects/23.ics']
+  -> MOVE /remote.php/dav/calendars/alex/trashbin/objects/19.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS after restore: none
+  personal after restore: ['/remote.php/dav/calendars/alex/personal/', '/remote.php/dav/calendars/alex/personal/R2.ics', '/remote.php/dav/calendars/alex/personal/R3.ics', '/remote.php/dav/calendars/alex/personal/R4.ics', '/remote.php/dav/calendars/alex/personal/incident.ics']
+  trash after restore: ['/remote.php/dav/calendars/alex/trashbin/objects/8.ics', '/remote.php/dav/calendars/alex/trashbin/objects/9.ics', '/remote.php/dav/calendars/alex/trashbin/objects/10.ics', '/remote.php/dav/calendars/alex/trashbin/objects/12.ics', '/remote.php/dav/calendars/alex/trashbin/objects/13.ics', '/remote.php/dav/calendars/alex/trashbin/objects/14.ics', '/remote.php/dav/calendars/alex/trashbin/objects/15.ics', '/remote.php/dav/calendars/alex/trashbin/objects/16.ics', '/remote.php/dav/calendars/alex/trashbin/objects/17.ics', '/remote.php/dav/calendars/alex/trashbin/objects/20.ics', '/remote.php/dav/calendars/alex/trashbin/objects/22.ics', '/remote.php/dav/calendars/alex/trashbin/objects/3.ics', '/remote.php/dav/calendars/alex/trashbin/objects/28.ics', '/remote.php/dav/calendars/alex/trashbin/objects/23.ics']
+
+================ s5
+
+## R5a NEEDS-ACTION with LAST-MODIFIED A
+  -> PUT /remote.php/dav/calendars/alex/personal/R5.ics = 201 {'etag': '"19d46699567d11c6b4f808de64535786"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## R5b DECLINED with LAST-MODIFIED B
+  -> PUT /remote.php/dav/calendars/alex/personal/R5.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R5", "method": "METHOD:REPLY"}]
+    ['LAST-MODIFIED:20261105T120100Z', 'ORGANIZER;CN=org;SCHEDULE-STATUS=1.1:mailto:organizer@external.test']
+
+## R5c ACCEPTED, LAST-MODIFIED B unchanged
+  -> PUT /remote.php/dav/calendars/alex/personal/R5.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R5", "method": "METHOD:REPLY"}]
+    ['LAST-MODIFIED:20261105T120100Z', 'ORGANIZER;CN=org;SCHEDULE-STATUS=1.1:mailto:organizer@external.test']
+
+## R6a Thunderbird-like ACCEPTED+CLIENT+LM
+  -> PUT /remote.php/dav/calendars/alex/personal/R6.ics = 201 {'etag': '"cc67809a52f46aa2cf9dd9aa1df43485"', 'content-type': 'text/html; charset=UTF-8'}
+  MAILS: none
+
+## R6b notify-decline: strip CLIENT, bump LM
+  -> PUT /remote.php/dav/calendars/alex/personal/R6.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: R6", "method": "METHOD:REPLY"}]
+    ['LAST-MODIFIED:20261105T120100Z', 'ORGANIZER;CN=org;SCHEDULE-STATUS=1.1:mailto:organizer@external.test']
+
+## R6c restore CLIENT, same LM, same content
+  -> PUT /remote.php/dav/calendars/alex/personal/R6.ics = 204 {'etag': '"5538c9cae447e7419e57d0f21221024c"'}
+  MAILS: none
+    ['LAST-MODIFIED:20261105T120100Z']
+
+## R6d DELETE (CLIENT restored)
+  -> DELETE /remote.php/dav/calendars/alex/personal/R6.ics = 204 {}
+  MAILS: none

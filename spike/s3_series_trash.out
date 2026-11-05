@@ -1,0 +1,73 @@
+
+## G0 attendee series create, NEEDS-ACTION->ACCEPTED quietly
+  -> PUT /remote.php/dav/calendars/alex/personal/G.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: G", "method": "METHOD:REPLY"}]
+
+## G1 attendee adds override (moves 08.12. +1h), no CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/G.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: G", "method": "METHOD:REPLY"}]
+
+## G2 attendee drops one occurrence via EXDATE, no CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/G.ics = 204 {}
+  MAILS: [{"to": ["organizer@external.test"], "subject": "Re: G", "method": "METHOD:REPLY"}]
+
+## H0 organizer series create (mails expected)
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 201 {'content-type': 'text/html; charset=UTF-8'}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Invitation: H", "method": "METHOD:REQUEST"}, {"to": ["bob@example.test"], "subject": "Invitation: H", "method": "METHOD:REQUEST"}]
+     bob has: ['DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0']
+
+## H1 organizer adds override (09.12. +1h), SEQUENCE 0
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 204 {}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Invitation: H", "method": "METHOD:REQUEST"}, {"to": ["bob@example.test"], "subject": "Invitation: H", "method": "METHOD:REQUEST"}]
+     bob has: ['DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0', 'RECURRENCE-ID;TZID=Europe/Berlin:20261209T100000', 'DTSTART;TZID=Europe/Berlin:20261209T110000', 'SEQUENCE:0']
+
+## H2 organizer EXDATEs 16.12., SEQUENCE 0
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 204 {}
+  MAILS: none
+     bob has: ['EXDATE;TZID=Europe/Berlin:20261216T100000', 'DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0', 'RECURRENCE-ID;TZID=Europe/Berlin:20261209T100000', 'DTSTART;TZID=Europe/Berlin:20261209T110000', 'SEQUENCE:0']
+
+## H3 organizer moves override again with LAST-MODIFIED bump only
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 204 {}
+  MAILS: [{"to": ["carol@external.test"], "subject": "Invitation updated: H", "method": "METHOD:REQUEST"}, {"to": ["bob@example.test"], "subject": "Invitation updated: H", "method": "METHOD:REQUEST"}]
+     bob has: ['EXDATE;TZID=Europe/Berlin:20261216T100000', 'DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0', 'RECURRENCE-ID;TZID=Europe/Berlin:20261209T100000', 'DTSTART;TZID=Europe/Berlin:20261209T120000', 'SEQUENCE:0']
+
+## H4 organizer adds override 23.12. with temporary SCHEDULE-AGENT=CLIENT
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 204 {}
+  MAILS: none
+     bob has: ['EXDATE;TZID=Europe/Berlin:20261216T100000', 'DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0', 'STATUS:CANCELLED', 'RECURRENCE-ID;TZID=Europe/Berlin:20261209T100000', 'DTSTART;TZID=Europe/Berlin:20261209T120000', 'SEQUENCE:0', 'STATUS:CANCELLED']
+
+## H5 strip CLIENT again, nothing else changed
+  -> PUT /remote.php/dav/calendars/alex/personal/H.ics = 204 {}
+  MAILS: none
+     bob has: ['EXDATE;TZID=Europe/Berlin:20261216T100000', 'DTSTART;TZID=Europe/Berlin:20261202T100000', 'SEQUENCE:0', 'RECURRENCE-ID;TZID=Europe/Berlin:20261209T100000', 'DTSTART;TZID=Europe/Berlin:20261209T120000', 'SEQUENCE:0', 'RECURRENCE-ID;TZID=Europe/Berlin:20261223T100000', 'DTSTART;TZID=Europe/Berlin:20261223T080000', 'SEQUENCE:0']
+
+## T trashbin
+  -> PROPFIND /remote.php/dav/calendars/alex/trashbin/ = 207 {'dav': '1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, oc-resource-sharing, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-calendar-publishing, calendarserver-sharing, nc-paginate, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar, 2', 'content-type': 'application/xml; charset=utf-8'}
+     <?xml version="1.0"?>
+     <d:multistatus xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns"><d:response><d:href>/remote.php/dav/calendars/alex/trashbin/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/><x1:trash-bin xmlns:x1="http://nextcloud.com/ns"/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response><d:response><d:href>/remote.php/dav/calendars/alex/trashbin/restore/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response><d:response><d:href>/remote.php/dav/calendars/alex/trashbin/objects/</d:href><d:propstat>
+  -> PROPFIND /remote.php/dav/calendars/alex/trashbin/objects/ = 501 {'dav': '1, 3, extended-mkcol, access-control, calendarserver-principal-property-search, oc-resource-sharing, calendar-access, calendar-proxy, calendar-auto-schedule, calendar-availability, nc-calendar-trashbin, nc-calendar-webcal-cache, calendarserver-subscribed, oc-calendar-publishing, calendarserver-sharing, nc-paginate, nextcloud-checksum-update, nc-calendar-search, nc-enable-birthday-calendar, 2', 'content-type': 'application/xml; charset=utf-8'}
+     <?xml version="1.0" encoding="utf-8"?>
+     <d:error xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns">
+       <s:exception>Sabre\DAV\Exception\NotImplemented</s:exception>
+       <s:message/>
+     </d:error>
+
+  trash objects: []
+
+## S sync-collection
+  token: http://sabre.io/ns/sync/53
+  -> REPORT /remote.php/dav/calendars/alex/personal/ = 207 {'content-type': 'application/xml; charset=utf-8'}
+     <?xml version="1.0"?>
+     <d:multistatus xmlns:d="DAV:" xmlns:s="http://sabredav.org/ns" xmlns:cal="urn:ietf:params:xml:ns:caldav" xmlns:cs="http://calendarserver.org/ns/" xmlns:oc="http://owncloud.org/ns" xmlns:nc="http://nextcloud.org/ns">
+      <d:response>
+       <d:href>/remote.php/dav/calendars/alex/personal/S.ics</d:href>
+       <d:propstat>
+        <d:prop>
+         <d:getetag>&quot;79017314976b3e4ccc01e64f112dd561&quot;</d:getetag>
+        </d:prop>
+        <d:status>HTTP/1.1 200 OK</d:status>
+       </d:propstat>
+      </d:response>
+      <d:sync-token>http://sabre.io/ns/sync/54</d:sync-token>
+     </d:multistatus>
+
